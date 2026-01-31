@@ -4,203 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steam Workshop Downloader</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #1a202c; /* Темный фон */
-            --card-bg: #2d3748; /* Фон карточки */
-            --primary-color: #63b3ed; /* Синий акцент */
-            --text-color: #e2e8f0; /* Светлый текст */
-            --input-bg: #4a5568; /* Фон для инпутов */
-            --button-hover: #4299e1; /* Ховер для кнопки */
-            --border-color: #4a5568; /* Цвет границ */
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
-        .container {
-            background-color: var(--card-bg);
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-            border: 1px solid var(--border-color);
-        }
-
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 30px;
-            font-weight: 700;
-            font-size: 2.2em;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 400;
-            color: var(--text-color);
-        }
-
-        input[type="text"] {
-            width: calc(100% - 20px);
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            font-size: 1em;
-            transition: border-color 0.3s ease;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background-color: var(--button-hover);
-        }
-
-        #status {
-            margin-top: 25px;
-            padding: 15px;
-            border-radius: 6px;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            font-size: 0.95em;
-            min-height: 40px; /* Чтобы всегда было место для текста */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            border: 1px solid var(--border-color);
-        }
-        
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: var(--card); padding: 40px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 100%; max-width: 480px; text-align: center; }
+        h1 { font-size: 28px; margin-bottom: 10px; color: var(--accent); }
+        p { color: #94a3b8; margin-bottom: 30px; font-size: 14px; }
+        input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; margin-bottom: 20px; box-sizing: border-box; }
+        button { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 10px; color: #0f172a; font-weight: 800; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(56, 189, 248, 0.4); }
+        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+        #status { margin-top: 25px; font-size: 14px; color: #94a3b8; line-height: 1.5; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Steam Workshop Downloader</h1>
-
-        <div class="input-group">
-            <label for="app_id">ID Приложения (App ID)</label>
-            <input type="text" id="app_id" placeholder="Например: 4000 для GMod, 107410 для Arma 3" value="4000">
-        </div>
-
-        <div class="input-group">
-            <label for="url">Ссылка на мод или коллекцию</label>
-            <input type="text" id="url" placeholder="Вставьте ссылку из Steam Workshop">
-        </div>
-        
-        <button id="downloadButton" onclick="startDownload()">Скачать в ZIP</button>
-        
-        <div id="status">Ожидание ссылки...</div>
+        <h1>Workshop Downloader</h1>
+        <p>Вставьте ссылку на мод или целую коллекцию</p>
+        <input type="text" id="url" placeholder="https://steamcommunity.com/sharedfiles/filedetails/?id=...">
+        <button id="btn" onclick="startDownload()">Скачать ZIP-архив</button>
+        <div id="status">Готов к работе</div>
     </div>
 
     <script>
         async function startDownload() {
-            const statusDiv = document.getElementById('status');
-            const downloadButton = document.getElementById('downloadButton');
-            const urlInput = document.getElementById('url');
-            const appidInput = document.getElementById('app_id');
+            const btn = document.getElementById('btn');
+            const status = document.getElementById('status');
+            const url = document.getElementById('url').value;
+            if (!url) return;
 
-            // Простая валидация
-            if (!urlInput.value || !appidInput.value) {
-                statusDiv.innerHTML = "Пожалуйста, введите App ID и ссылку на мод.";
-                return;
-            }
-
-            statusDiv.innerHTML = '<span class="loading-spinner"></span> Загрузка начинается, это может занять до нескольких минут...';
-            downloadButton.disabled = true; // Отключаем кнопку, чтобы избежать повторных кликов
+            btn.disabled = true;
+            status.innerHTML = "⏳ Проверяем ссылку и начинаем сборку...<br>Если в коллекции много модов, это займет время.";
 
             try {
                 const response = await fetch('/download', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        url: urlInput.value,
-                        app_id: appidInput.value
-                    })
+                    body: JSON.stringify({ url: url })
                 });
 
                 if (response.ok) {
                     const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
+                    const dUrl = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url;
-                    // Попытаемся получить имя файла из заголовков, если доступно
-                    const contentDisposition = response.headers.get('Content-Disposition');
-                    if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
-                        const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
-                        if (filenameMatch && filenameMatch[1]) {
-                            a.download = filenameMatch[1];
-                        } else {
-                            a.download = "workshop_mod.zip"; // Дефолтное имя
-                        }
-                    } else {
-                         a.download = "workshop_mod.zip"; // Дефолтное имя
-                    }
-                    
-                    document.body.appendChild(a);
+                    a.href = dUrl;
+                    a.download = "steam_collection.zip";
                     a.click();
-                    window.URL.revokeObjectURL(url); // Очищаем URL
-                    statusDiv.innerHTML = "✅ Загрузка завершена! Файл скачан.";
+                    status.innerHTML = "✅ Коллекция успешно упакована и скачана!";
                 } else {
-                    const errorData = await response.json();
-                    statusDiv.innerHTML = `❌ Ошибка: ${errorData.error || 'Неизвестная ошибка.'}`;
+                    const err = await response.json();
+                    status.innerHTML = "❌ Ошибка: " + err.error;
                 }
-            } catch (error) {
-                statusDiv.innerHTML = `❌ Произошла сетевая ошибка: ${error.message}`;
+            } catch (e) {
+                status.innerHTML = "❌ Произошла ошибка при соединении с сервером.";
             } finally {
-                downloadButton.disabled = false; // Включаем кнопку обратно
+                btn.disabled = false;
             }
         }
     </script>
