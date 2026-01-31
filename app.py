@@ -1,22 +1,28 @@
 import os
+import re
 import subprocess
 import zipfile
+import shutil
 import requests
-from flask import Flask, request, send_file, render_template, jsonify
+from flask import Flask, request, render_template, send_file, jsonify
 
 app = Flask(__name__)
 
-# Путь для временного хранения файлов
-DOWNLOAD_PATH = "/tmp/steam_mods"
-ZIP_PATH = "/tmp/modpack.zip"
+BASE_DIR = "/tmp/workshop_data"
 
-def get_collection_ids(collection_id):
-    """Получает ID всех модов из коллекции через Steam API"""
-    url = "https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1/"
-    data = {'collectioncount': 1, 'publishedfileids[0]': collection_id}
-    r = requests.post(url, data=data)
-    items = r.json().get('response', {}).get('collectiondetails', [{}])[0].get('children', [])
-    return [item['publishedfileid'] for item in items]
+def get_app_id(workshop_id):
+    """Автоматически находит App ID игры по ссылке на мод"""
+    try:
+        url = f"https://steamcommunity.com/sharedfiles/filedetails/?id={workshop_id}"
+        response = requests.get(url, timeout=10)
+        # Ищем в коде страницы ссылку на магазин, которая содержит App ID
+        # Обычно это выглядит так: store.steampowered.com/app/4000
+        match = re.search(r'steampowered\.com/app/(\d+)', response.text)
+        if match:
+            return match[1]
+        return None
+    except:
+        return None
 
 @app.route('/')
 def index():
@@ -24,37 +30,54 @@ def index():
 
 @app.route('/download', methods=['POST'])
 def download():
-    url = request.json.get('url')
-    # Извлекаем ID из ссылки
-    import re
-    id_match = re.search(r'id=(\d+)', url)
-    if not id_match:
-        return jsonify({"error": "Неверная ссылка"}), 400
+    data = request.json
+    url = data.get('url')
+
+    # 1. Извлекаем ID мода
+    match = re.search(r'id=(\d+)', url)
+    if not match:
+        return jsonify({"error": "Некорректная ссылка на Workshop"}), 400
     
-    workshop_id = id_match[1]
+    item_id = match[1]
+
+    # 2. Автоматически определяем App ID игры
+    app_id = get_app_id(item_id)
+    if not app_id:
+        return jsonify({"error": "Не удалось определить игру для этого мода. Проверьте ссылку."}), 400
     
-    # Создаем директории
-    if not os.path.exists(DOWNLOAD_PATH):
-        os.makedirs(DOWNLOAD_PATH)
+    # Очистка папок
+    if os.path.exists(BASE_DIR):
+        shutil.rmtree(BASE_DIR)
+    os.makedirs(BASE_DIR)
 
-    # Проверяем, коллекция это или один мод
-    mod_ids = get_collection_ids(workshop_id)
-    if not mod_ids:
-        mod_ids = [workshop_id]
+    # 3. Скачивание через SteamCMD
+    try:
+        # Команда загрузки
+        cmd = f"steamcmd +login anonymous +workshop_download_item {app_id} {item_id} +quit"
+        subprocess.run(cmd, shell=True, check=True)
+        
+        # Путь скачанных файлов
+        steam_path = f"/root/Steam/steamapps/workshop/content/{app_id}/{item_id}"
+        
+        if not os.path.exists(steam_path):
+            return jsonify({"error": "Файлы не найдены. Возможно, анонимное скачивание запрещено для этой игры."}), 500
 
-    # Скачивание через SteamCMD (пример команды)
-    for m_id in mod_ids:
-        # ВАЖНО: APP_ID игры (например, 4000 для GMod) нужно знать заранее или парсить
-        cmd = f"steamcmd +login anonymous +workshop_download_item 4000 {m_id} +quit"
-        subprocess.run(cmd, shell=True)
+        zip_filename = f"mod_{item_id}.zip"
+        zip_path = os.path.join(BASE_DIR, zip_filename)
 
-    # Создание ZIP
-    with zipfile.ZipFile(ZIP_PATH, 'w') as zipf:
-        for root, dirs, files in os.walk(DOWNLOAD_PATH):
-            for file in files:
-                zipf.write(os.path.join(root, file), file)
+        # 4. Упаковка в ZIP
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(steam_path):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    arcname = os.path.relpath(full_path, steam_path)
+                    zipf.write(full_path, arcname=arcname)
 
-    return send_file(ZIP_PATH, as_attachment=True)
+        return send_file(zip_path, as_attachment=True)
+
+    except Exception as e:
+        return jsonify({"error": f"Ошибка сервера: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
