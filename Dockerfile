@@ -1,28 +1,31 @@
-FROM python:3.9-slim-buster
+# Используем более современный образ Debian (Bullseye), где репозитории работают
+FROM python:3.9-slim-bullseye
 
-# Установка необходимых библиотек для SteamCMD (32-битные библиотеки обязательны)
-RUN apt-get update && apt-get install -y \
+# Установка зависимостей для SteamCMD
+# Мы добавляем архитектуру i386, так как SteamCMD — 32-битное приложение
+RUN dpkg --add-architecture i386 && \
+    apt-get update && apt-get install -y \
     curl \
-    lib32gcc1 \
+    lib32gcc-s1 \
     lib32stdc++6 \
     ca-certificates \
     && mkdir -p /root/steamcmd && cd /root/steamcmd \
     && curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
 
-# Добавляем путь к steamcmd в системные переменные
+# Добавляем SteamCMD в PATH
 ENV PATH="/root/steamcmd:${PATH}"
 
 WORKDIR /app
 
-# Копируем зависимости и устанавливаем их
+# Копируем и устанавливаем зависимости Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем все остальные файлы проекта
+# Копируем проект
 COPY . .
 
-# Создаем папки для загрузок
-RUN mkdir -p /app/downloads /app/templates
+# Создаем папку для шаблонов, если её нет
+RUN mkdir -p /app/templates
 
-# Запуск приложения
+# Запуск
 CMD ["python", "app.py"]
